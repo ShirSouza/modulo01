@@ -13,20 +13,46 @@ server.use(express.json());
 
 const cursos = ['Node JS', 'JavaScript' ,  'React Native' ];
 
+//Middleware Global
+server.use((req,res, next) => {
+    console.log(`URL CHAMADA: ${req.url}`);
+
+    return next();
+})
+
+function checkCurso(req, res, next){
+    if (!req.body.name){
+        return res.status(400).json( { error : "Nome do curso é obrigatorio"} )
+    }
+    return next();
+}
+
+function checkIndexCurso(req, res, next){
+    const curso = cursos[req.params.index];
+    if(!curso){
+        return res.status(400).json( { error : "O curso não existe"} ) 
+    }
+
+    req.curso = curso;
+
+    return next();
+}
+
+
 server.get('/cursos', (req, res) => {
     return res.json(cursos);
 });
 
 //Route Params = /curso/2
-server.get('/cursos/:index', (req, res) => {
+server.get('/cursos/:index', checkIndexCurso, (req, res) => {
 
-    const {index} = req.params;
+   // const {index} = req.params;
     
-    return res.json(cursos[index])
+    return res.json(req.curso)
 });
 
 //Criando um novo curso
-server.post('/cursos' , (req,res) => {
+server.post('/cursos' , checkCurso, (req,res) => {
     const { name }  = req.body;
 
     cursos.push(name);
@@ -35,7 +61,7 @@ server.post('/cursos' , (req,res) => {
 });
 
 //Atualizando um curso
-server.put('/cursos/:index', (req, res) => {
+server.put('/cursos/:index', checkCurso , checkIndexCurso, (req, res) => {
     const { index } = req.params;
     const { name }  = req.body;
 
@@ -45,7 +71,7 @@ server.put('/cursos/:index', (req, res) => {
 });
 
 //Delete um curso
-server.delete('/cursos/:index' , (req, res) => {
+server.delete('/cursos/:index' , checkIndexCurso, (req, res) => {
     const { index } = req.params;
 
     cursos.splice(index, 1);
